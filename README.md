@@ -1,214 +1,13 @@
 # FundSeeker
 
-[English](#english) | [中文](#中文)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub stars](https://img.shields.io/github/stars/yuna78/fundseeker.svg?style=social)](https://github.com/yuna78/fundseeker/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/yuna78/fundseeker.svg?style=social)](https://github.com/yuna78/fundseeker/network)
+[![GitHub issues](https://img.shields.io/github/issues/yuna78/fundseeker.svg)](https://github.com/yuna78/fundseeker/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
----
-
-## English
-
-### Overview
-
-**FundSeeker** is a comprehensive Python-based toolkit for Chinese mutual fund analysis and recommendation. It provides end-to-end capabilities from data collection to intelligent fund recommendations using both rule-based and machine learning approaches.
-
-### Key Features
-
-- **Data Collection**: Fetch fund rankings, ratings, detailed information, and historical NAV data from Eastmoney (天天基金网)
-- **Multi-Agency Ratings**: Aggregate ratings from Morningstar, Shanghai Securities, and other agencies
-- **Basic Recommendations**: 8-factor scoring system with configurable weights
-- **Advanced ML Models**: Feature engineering and backtesting using SQLite + trained models
-- **Batch Processing**: Resume-capable batch operations for large datasets (10,000+ funds)
-- **Cross-Platform**: Works on macOS, Linux, and Windows
-
-### Project Structure
-
-```
-fundseeker/
-├── fundseeker/          # Core CLI tool for data fetching and basic recommendations
-│   ├── src/            # Service layer, data fetchers, utilities
-│   ├── templates/      # CSV templates for fund lists
-│   └── README.md       # Detailed CLI documentation
-│
-└── fund_reco_fit/      # Advanced recommendation pipeline
-    ├── src/            # NAV importer, feature builder, optimizer, backtester
-    ├── doc/            # Design docs and validation guides
-    └── README.md       # Advanced features documentation
-```
-
-### Quick Start
-
-#### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yuna78/999.fundseeker.git
-cd fundseeker
-```
-
-#### 2. Run FundSeeker CLI
-
-**macOS/Linux:**
-```bash
-cd fundseeker
-./fundseeker.sh        # Launch interactive menu
-```
-
-**Windows:**
-```bash
-cd fundseeker
-fundseeker.bat         # Launch interactive menu
-```
-
-The shell scripts will automatically:
-- Create a Python virtual environment
-- Install dependencies
-- Launch the interactive menu
-
-#### 3. Basic Workflow
-
-**Step 1: Fetch Fund Rankings**
-```bash
-./fundseeker.sh rank --limit 200
-```
-This fetches top 200 funds with multi-agency ratings.
-
-**Step 2: Fetch Fund Details**
-```bash
-./fundseeker.sh details --input data/fund_list.csv
-```
-Fetches detailed information (manager, scale, inception date) for funds in your list.
-
-**Step 3: Generate Recommendations**
-```bash
-./fundseeker.sh recommend --top-n 200
-```
-Generates recommendations using the 8-factor scoring model.
-
-### Complete Workflow: Data → Model → Recommendations
-
-#### Phase 1: Data Collection (fundseeker/)
-
-1. **Fetch rankings and ratings**:
-   ```bash
-   cd fundseeker
-   ./fundseeker.sh rank --limit 1000
-   ```
-
-2. **Download historical NAV data**:
-   ```bash
-   ./fundseeker.sh nav
-   ```
-   This downloads NAV time series for all funds in `data/fund_list.csv`.
-
-3. **Fetch fund details**:
-   ```bash
-   ./fundseeker.sh details
-   ```
-
-All outputs are saved to `fundseeker/output/` with timestamps.
-
-#### Phase 2: Feature Engineering & Model Training (fund_reco_fit/)
-
-1. **Import NAV data into SQLite**:
-   ```bash
-   cd ../fund_reco_fit
-   python3 -m venv .venv
-   source .venv/bin/activate  # Windows: .venv\Scripts\activate
-   pip install -r requirements.txt
-
-   python3 -m src.nav_importer \
-     --fundseeker-output ../fundseeker/output \
-     --database data/fundseeker_nav.db
-   ```
-
-2. **Build features**:
-   ```bash
-   python3 -m src.feature_builder \
-     --database data/fundseeker_nav.db \
-     --freq M \
-     --table-name features_M_star
-   ```
-   This computes 36-month rolling metrics (returns, volatility, drawdowns, Morningstar-style risk metrics).
-
-3. **Train factor model**:
-   ```bash
-   python3 -m src.optimizer \
-     --database data/fundseeker_nav.db \
-     --feature-table features_M_star \
-     --snapshot-start 2020-01-01 \
-     --snapshot-end 2024-12-31 \
-     --future-horizon 6 \
-     --top-k 200 \
-     --output-json models/model_params_6m.json
-   ```
-
-4. **Validate model** (optional but recommended):
-   ```bash
-   ./quick_validate.sh
-   ```
-   Choose walk-forward validation or real 2025 data validation to check for overfitting.
-
-#### Phase 3: Generate Advanced Recommendations (fundseeker/)
-
-1. **Configure advanced model** in `fundseeker/config.yaml`:
-   ```yaml
-   advanced_model:
-     - label: 6m
-       db_path: ../fund_reco_fit/data/fundseeker_nav.db
-       feature_table: features_M_star
-       weights_path: ../fund_reco_fit/models/model_params_6m.json
-       top_k: 200
-   ```
-
-2. **Generate recommendations**:
-   ```bash
-   cd ../fundseeker
-   ./fundseeker.sh recommend --mode advanced --adv-variant 6m
-   ```
-
-The output Excel file includes predicted scores, Morningstar-style risk metrics, and rankings.
-
-### Configuration
-
-#### Basic Recommendation Weights
-
-Edit `fundseeker/config.yaml`:
-
-```yaml
-recommendation_weights:
-  recent: 0.35        # Recent momentum
-  mid: 0.20           # Mid-term trend
-  long: 0.15          # Long-term stability
-  risk_penalty: 0.10  # Volatility penalty
-  manager: 0.10       # Manager performance
-  scale: 0.05         # Fund size
-  rating: 0.30        # Agency ratings
-  age: 0.02           # Fund age
-```
-
-Or use environment variables:
-```bash
-export FUNDSEEKER_RECENT_WEIGHT=0.4
-export FUNDSEEKER_RATING_WEIGHT=0.25
-```
-
-### Documentation
-
-- **FundSeeker CLI**: See `fundseeker/README.md` for detailed command reference
-- **Advanced Features**: See `fund_reco_fit/README.md` for ML pipeline documentation
-- **Design Docs**: See `fundseeker/doc/` and `fund_reco_fit/doc/` for architecture and design decisions
-
-### Requirements
-
-- Python 3.8+
-- Dependencies are automatically installed by shell scripts
-- Core libraries: pandas, requests, typer, openpyxl, PyYAML
-
-### Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+[中文](#中文) | [English](#english)
 
 ---
 
@@ -247,7 +46,7 @@ fundseeker/
 #### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/yuna78/999.fundseeker.git
+git clone https://github.com/yuna78/fundseeker.git
 cd fundseeker
 ```
 
@@ -402,7 +201,7 @@ export FUNDSEEKER_RATING_WEIGHT=0.25
 
 - **FundSeeker CLI**：查看 `fundseeker/README.md` 了解详细命令参考
 - **高级功能**：查看 `fund_reco_fit/README.md` 了解机器学习流水线文档
-- **设计文档**：查看 `fundseeker/doc/` 和 `fund_reco_fit/doc/` 了解架构和设计决策
+- **设计文档**：查看 `doc/fundseeker/` 和 `doc/fund_reco_fit/` 了解架构和设计决策
 
 ### 系统要求
 
@@ -417,3 +216,211 @@ export FUNDSEEKER_RATING_WEIGHT=0.25
 ### 许可证
 
 本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+
+---
+
+## English
+
+### Overview
+
+**FundSeeker** is a comprehensive Python-based toolkit for Chinese mutual fund analysis and recommendation. It provides end-to-end capabilities from data collection to intelligent fund recommendations using both rule-based and machine learning approaches.
+
+### Key Features
+
+- **Data Collection**: Fetch fund rankings, ratings, detailed information, and historical NAV data from Eastmoney (天天基金网)
+- **Multi-Agency Ratings**: Aggregate ratings from Morningstar, Shanghai Securities, and other agencies
+- **Basic Recommendations**: 8-factor scoring system with configurable weights
+- **Advanced ML Models**: Feature engineering and backtesting using SQLite + trained models
+- **Batch Processing**: Resume-capable batch operations for large datasets (10,000+ funds)
+- **Cross-Platform**: Works on macOS, Linux, and Windows
+
+### Project Structure
+
+```
+fundseeker/
+├── fundseeker/          # Core CLI tool for data fetching and basic recommendations
+│   ├── src/            # Service layer, data fetchers, utilities
+│   ├── templates/      # CSV templates for fund lists
+│   └── README.md       # Detailed CLI documentation
+│
+└── fund_reco_fit/      # Advanced recommendation pipeline
+    ├── src/            # NAV importer, feature builder, optimizer, backtester
+    ├── doc/            # Design docs and validation guides
+    └── README.md       # Advanced features documentation
+```
+
+### Quick Start
+
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/yuna78/fundseeker.git
+cd fundseeker
+```
+
+#### 2. Run FundSeeker CLI
+
+**macOS/Linux:**
+```bash
+cd fundseeker
+./fundseeker.sh        # Launch interactive menu
+```
+
+**Windows:**
+```bash
+cd fundseeker
+fundseeker.bat         # Launch interactive menu
+```
+
+The shell scripts will automatically:
+- Create a Python virtual environment
+- Install dependencies
+- Launch the interactive menu
+
+#### 3. Basic Workflow
+
+**Step 1: Fetch Fund Rankings**
+```bash
+./fundseeker.sh rank --limit 200
+```
+This fetches top 200 funds with multi-agency ratings.
+
+**Step 2: Fetch Fund Details**
+```bash
+./fundseeker.sh details --input data/fund_list.csv
+```
+Fetches detailed information (manager, scale, inception date) for funds in your list.
+
+**Step 3: Generate Recommendations**
+```bash
+./fundseeker.sh recommend --top-n 200
+```
+Generates recommendations using the 8-factor scoring model.
+
+### Complete Workflow: Data → Model → Recommendations
+
+#### Phase 1: Data Collection (fundseeker/)
+
+1. **Fetch rankings and ratings**:
+   ```bash
+   cd fundseeker
+   ./fundseeker.sh rank --limit 1000
+   ```
+
+2. **Download historical NAV data**:
+   ```bash
+   ./fundseeker.sh nav
+   ```
+   This downloads NAV time series for all funds in `data/fund_list.csv`.
+
+3. **Fetch fund details**:
+   ```bash
+   ./fundseeker.sh details
+   ```
+
+All outputs are saved to `fundseeker/output/` with timestamps.
+
+#### Phase 2: Feature Engineering & Model Training (fund_reco_fit/)
+
+1. **Import NAV data into SQLite**:
+   ```bash
+   cd ../fund_reco_fit
+   python3 -m venv .venv
+   source .venv/bin/activate  # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+
+   python3 -m src.nav_importer \
+     --fundseeker-output ../fundseeker/output \
+     --database data/fundseeker_nav.db
+   ```
+
+2. **Build features**:
+   ```bash
+   python3 -m src.feature_builder \
+     --database data/fundseeker_nav.db \
+     --freq M \
+     --table-name features_M_star
+   ```
+   This computes 36-month rolling metrics (returns, volatility, drawdowns, Morningstar-style risk metrics).
+
+3. **Train factor model**:
+   ```bash
+   python3 -m src.optimizer \
+     --database data/fundseeker_nav.db \
+     --feature-table features_M_star \
+     --snapshot-start 2020-01-01 \
+     --snapshot-end 2024-12-31 \
+     --future-horizon 6 \
+     --top-k 200 \
+     --output-json models/model_params_6m.json
+   ```
+
+4. **Validate model** (optional but recommended):
+   ```bash
+   ./quick_validate.sh
+   ```
+   Choose walk-forward validation or real 2025 data validation to check for overfitting.
+
+#### Phase 3: Generate Advanced Recommendations (fundseeker/)
+
+1. **Configure advanced model** in `fundseeker/config.yaml`:
+   ```yaml
+   advanced_model:
+     - label: 6m
+       db_path: ../fund_reco_fit/data/fundseeker_nav.db
+       feature_table: features_M_star
+       weights_path: ../fund_reco_fit/models/model_params_6m.json
+       top_k: 200
+   ```
+
+2. **Generate recommendations**:
+   ```bash
+   cd ../fundseeker
+   ./fundseeker.sh recommend --mode advanced --adv-variant 6m
+   ```
+
+The output Excel file includes predicted scores, Morningstar-style risk metrics, and rankings.
+
+### Configuration
+
+#### Basic Recommendation Weights
+
+Edit `fundseeker/config.yaml`:
+
+```yaml
+recommendation_weights:
+  recent: 0.35        # Recent momentum
+  mid: 0.20           # Mid-term trend
+  long: 0.15          # Long-term stability
+  risk_penalty: 0.10  # Volatility penalty
+  manager: 0.10       # Manager performance
+  scale: 0.05         # Fund size
+  rating: 0.30        # Agency ratings
+  age: 0.02           # Fund age
+```
+
+Or use environment variables:
+```bash
+export FUNDSEEKER_RECENT_WEIGHT=0.4
+export FUNDSEEKER_RATING_WEIGHT=0.25
+```
+
+### Documentation
+
+- **FundSeeker CLI**: See `fundseeker/README.md` for detailed command reference
+- **Advanced Features**: See `fund_reco_fit/README.md` for ML pipeline documentation
+- **Design Docs**: See `doc/fundseeker/` and `doc/fund_reco_fit/` for architecture and design decisions
+
+### Requirements
+
+- Python 3.8+
+- Dependencies are automatically installed by shell scripts
+- Core libraries: pandas, requests, typer, openpyxl, PyYAML
+
+### Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
