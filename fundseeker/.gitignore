@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/
+_fundseeker/
+
+# Runtime outputs
+output/
+.fs/logs/
+.fs/progress/
+
+# Local notebooks / temp files
+*.log
+~$*
+
+历史数据/
+.DS_Store
+

@@ -1,0 +1,7 @@
+{
+  "name": "update-fund-data",
+  "description": "增量更新基金数据：从API获取最新净值数据，计算特征，重新训练模型",
+  "version": "1.0.0",
+  "author": "Fund Seeker Team",
+  "instructions": "instructions.md"
+}

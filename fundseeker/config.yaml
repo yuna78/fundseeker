@@ -1,0 +1,42 @@
+defaults:
+  output_dir: output
+  logs_dir: .fs/logs
+  progress_dir: .fs/progress
+  templates_dir: templates
+  data_dir: data
+  default_fund_list: data/fund_list.csv
+  batch_size: 10
+  save_interval: 100
+  request_delay: 0.5
+  request_timeout: 30
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  recommendation_weights:
+    recent: 0.35
+    mid: 0.20
+    long: 0.15
+    risk_penalty: 0.10
+    manager: 0.10
+    scale: 0.05
+    rating: 0.3
+    age: 0.02
+  advanced_model:
+    - label: 6m
+      db_path: ../fund_reco_fit/data/fundseeker_nav.db
+      feature_table: features_M_star
+      weights_path: ../fund_reco_fit/models/model_params_6m.json
+      top_k: 200
+    - label: 12m
+      db_path: ../fund_reco_fit/data/fundseeker_nav.db
+      feature_table: features_M_star
+      weights_path: ../fund_reco_fit/models/model_params_12m.json
+      top_k: 200
+    - label: crosssec12
+      db_path: ../fund_reco_fit/data/fundseeker_nav.db
+      feature_table: features_M_star
+      weights_path: ../fund_reco_fit/models/model_params_crosssec12.json
+      top_k: 200
+    - label: crosssec6
+      db_path: ../fund_reco_fit/data/fundseeker_nav.db
+      feature_table: features_M_star
+      weights_path: ../fund_reco_fit/models/model_params_crosssec6.json
+      top_k: 200

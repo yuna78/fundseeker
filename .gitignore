@@ -1,0 +1,75 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# FundSeeker specific
+# Hidden directories for progress and logs
+.fs/
+fundseeker/.fs/
+
+# Output directories
+output/
+fundseeker/output/
+fund_reco_fit/output/
+
+# User data files (keep templates only)
+fundseeker/data/*.csv
+fundseeker/data/*.xlsx
+fundseeker/data/*.db
+!fundseeker/data/.gitkeep
+
+# Fund_reco_fit data files
+fund_reco_fit/data/*.csv
+fund_reco_fit/data/*.parquet
+fund_reco_fit/data/*.db
+fund_reco_fit/data/*.xlsx
+!fund_reco_fit/data/.gitkeep
+
+# Trained models (keep example configs only)
+fund_reco_fit/models/*.json
+!fund_reco_fit/models/.gitkeep
+!fund_reco_fit/models/model_params_example.json
+
+# Temporary and test files in fund_reco_fit
+fund_reco_fit/auto_tune*.py
+fund_reco_fit/batch_update_*.csv
+fund_reco_fit/batch_update_*.py
+fund_reco_fit/check_*.py
+fund_reco_fit/import_data_simple.py
+fund_reco_fit/incremental_update.py
+fund_reco_fit/predict_*.py
+fund_reco_fit/simple_*.py
+fund_reco_fit/smart_update.py
+fund_reco_fit/test_*.py
+fund_reco_fit/test_*.csv
+fund_reco_fit/update_funds.py
+fund_reco_fit/*.sh
+fund_reco_fit/all_funds_for_details.csv
+fund_reco_fit/funds_*.csv
+fund_reco_fit/temp_*.csv
+
+# Logs
+*.log
+
+# 归档文档（不提交）
+doc/archive/
